@@ -87,6 +87,13 @@ async function detectSquash(git, branch, masterBranch) {
 
 async function deleteBranch(repoPath, branchName) {
     const git = simpleGit(repoPath);
+
+    // Validate it's a repo
+    const isRepo = await git.checkIsRepo();
+    if (!isRepo) {
+        throw new Error('Invalid git repository path');
+    }
+
     await git.deleteLocalBranch(branchName, true);
 }
 

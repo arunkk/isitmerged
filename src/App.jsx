@@ -6,18 +6,23 @@ const API_URL = 'http://localhost:3001/api';
 
 function App() {
     const [path, setPath] = useState(localStorage.getItem('repoPath') || '');
+    const [activeRepo, setActiveRepo] = useState('');
     const [branches, setBranches] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
-        localStorage.setItem('repoPath', path);
+        if (path) {
+            localStorage.setItem('repoPath', path);
+        }
     }, [path]);
 
     const scanRepo = async (e) => {
         if (e) e.preventDefault();
-        if (!path.trim()) return;
+        const repoPath = path || activeRepo; // Use activeRepo if path is empty (e.g. refresh)
+
+        if (!repoPath.trim()) return;
 
         setLoading(true);
         setError('');
@@ -26,7 +31,7 @@ function App() {
             const res = await fetch(`${API_URL}/scan`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path }),
+                body: JSON.stringify({ path: repoPath }),
             });
 
             const data = await res.json();
@@ -34,6 +39,9 @@ function App() {
             if (!res.ok) throw new Error(data.error || 'Failed to scan repository');
 
             setBranches(data.branches);
+            setActiveRepo(repoPath);
+            // If path was empty but we used activeRepo, update path to match
+            if (!path) setPath(repoPath);
         } catch (err) {
             setError(err.message);
             setBranches([]);
@@ -45,12 +53,17 @@ function App() {
     const handleDelete = async (branchName) => {
         if (!window.confirm(`Are you sure you want to delete branch "${branchName}"?`)) return;
 
+        if (!activeRepo) {
+            alert('No active repository found. Please scan again.');
+            return;
+        }
+
         setIsDeleting(true);
         try {
             const res = await fetch(`${API_URL}/delete`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path, branch: branchName }),
+                body: JSON.stringify({ path: activeRepo, branch: branchName }),
             });
 
             const data = await res.json();
@@ -59,7 +72,8 @@ function App() {
             // Refresh list
             await scanRepo();
         } catch (err) {
-            alert(err.message);
+            console.error(err);
+            alert(`Error: ${err.message}`);
         } finally {
             setIsDeleting(false);
         }
