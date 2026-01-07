@@ -1,7 +1,7 @@
 import React from 'react';
 import { GitBranch, GitMerge, CheckCircle, Trash2, Shield, Clock, User } from 'lucide-react';
 
-const StatusBadge = ({ status }) => {
+const StatusBadge = ({ status, reason }) => {
     const styles = {
         MASTER: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
         MERGED: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
@@ -17,7 +17,10 @@ const StatusBadge = ({ status }) => {
     };
 
     return (
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${styles[status] || styles.OPEN}`}>
+        <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${styles[status] || styles.OPEN}`}
+            title={reason}
+        >
             {icons[status]}
             {status}
         </span>
@@ -56,7 +59,7 @@ const BranchList = ({ branches, onDelete, isDeleting }) => {
                                     </div>
                                 </td>
                                 <td className="p-4">
-                                    <StatusBadge status={branch.status} />
+                                    <StatusBadge status={branch.status} reason={branch.reason} />
                                 </td>
                                 <td className="p-4 max-w-[300px]">
                                     <div className="flex flex-col gap-1">
