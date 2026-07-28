@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "better-sqlite3": "^13.0.1",
     "cors": "^2.8.5",
     "express": "^5.2.1",
     "lucide-react": "^0.562.0",

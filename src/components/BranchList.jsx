@@ -46,14 +46,17 @@ const BranchList = ({ branches, onDelete, isDeleting }) => {
                         {branches.map((branch) => (
                             <tr
                                 key={branch.name}
-                                className={`group transition-colors hover:bg-white/5 ${branch.current ? 'bg-purple-900/10' : ''}`}
+                                className={`group transition-colors hover:bg-white/5 ${branch.current ? 'bg-purple-900/10' : ''} ${branch.deleted ? 'opacity-50' : ''}`}
                             >
                                 <td className="p-4">
                                     <div className="flex items-center gap-2">
-                                        <span className={`font-mono font-medium ${branch.current ? 'text-purple-400' : 'text-slate-200'}`}>
+                                        {branch.deleted && (
+                                            <span className="text-slate-500" title="Deleted — rescan to refresh the list">&mdash;</span>
+                                        )}
+                                        <span className={`font-mono font-medium ${branch.deleted ? 'text-slate-500 line-through' : branch.current ? 'text-purple-400' : 'text-slate-200'}`}>
                                             {branch.name}
                                         </span>
-                                        {branch.current && (
+                                        {branch.current && !branch.deleted && (
                                             <span className="text-[10px] bg-purple-500 text-white px-1.5 rounded">CURRENT</span>
                                         )}
                                     </div>
@@ -77,7 +80,8 @@ const BranchList = ({ branches, onDelete, isDeleting }) => {
                                     </div>
                                 </td>
                                 <td className="p-4 text-right">
-                                    {(branch.status === 'MERGED' || branch.status === 'SQUASHED') && branch.status !== 'MASTER' && (
+                                    {branch.deleted && <span className="text-slate-500">&mdash;</span>}
+                                    {!branch.deleted && (branch.status === 'MERGED' || branch.status === 'SQUASHED') && branch.status !== 'MASTER' && (
                                         <button
                                             onClick={() => onDelete(branch.name)}
                                             disabled={isDeleting}

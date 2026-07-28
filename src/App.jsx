@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, GitBranch, Loader2, AlertCircle, FolderGit } from 'lucide-react';
+import { Search, GitBranch, Loader2, AlertCircle, FolderGit, RefreshCw } from 'lucide-react';
 import BranchList from './components/BranchList';
 
 const API_URL = 'http://localhost:3001/api';
@@ -11,6 +11,7 @@ function App() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
+    const [scanInfo, setScanInfo] = useState(null);
 
     useEffect(() => {
         if (path) {
@@ -18,7 +19,7 @@ function App() {
         }
     }, [path]);
 
-    const scanRepo = async (e) => {
+    const scanRepo = async (e, { force = false } = {}) => {
         if (e) e.preventDefault();
         const repoPath = path || activeRepo; // Use activeRepo if path is empty (e.g. refresh)
 
@@ -31,7 +32,7 @@ function App() {
             const res = await fetch(`${API_URL}/scan`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: repoPath }),
+                body: JSON.stringify({ path: repoPath, force }),
             });
 
             const data = await res.json();
@@ -39,12 +40,14 @@ function App() {
             if (!res.ok) throw new Error(data.error || 'Failed to scan repository');
 
             setBranches(data.branches);
+            setScanInfo({ scannedAt: data.scannedAt, cached: data.cached });
             setActiveRepo(repoPath);
             // If path was empty but we used activeRepo, update path to match
             if (!path) setPath(repoPath);
         } catch (err) {
             setError(err.message);
             setBranches([]);
+            setScanInfo(null);
         } finally {
             setLoading(false);
         }
@@ -69,8 +72,10 @@ function App() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Failed to delete branch');
 
-            // Refresh list
-            await scanRepo();
+            // No rescan: mark the branch as gone in place (server does the same in its cache)
+            setBranches((prev) =>
+                prev.map((b) => (b.name === branchName ? { ...b, deleted: true } : b))
+            );
         } catch (err) {
             console.error(err);
             alert(`Error: ${err.message}`);
@@ -114,6 +119,23 @@ function App() {
                         </button>
                     </div>
                 </form>
+
+                {scanInfo && !error && (
+                    <div className="mt-4 flex items-center justify-center gap-3 text-xs text-slate-500">
+                        <span>
+                            {scanInfo.cached ? 'Cached scan from ' : 'Scanned '}
+                            {new Date(scanInfo.scannedAt).toLocaleString()}
+                        </span>
+                        <button
+                            onClick={() => scanRepo(null, { force: true })}
+                            disabled={loading}
+                            className="inline-flex items-center gap-1 text-slate-400 hover:text-purple-400 transition-colors disabled:opacity-50"
+                            title="Force a fresh scan"
+                        >
+                            <RefreshCw size={12} className={loading ? 'animate-spin' : ''} /> Rescan
+                        </button>
+                    </div>
+                )}
 
                 {error && (
                     <div className="mt-4 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 flex items-center gap-2 animate-in fade-in slide-in-from-top-2">

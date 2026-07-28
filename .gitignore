@@ -29,3 +29,6 @@ dist-ssr
 
 # Testing
 coverage
+
+# Local scan cache
+data
